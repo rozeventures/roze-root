@@ -323,7 +323,7 @@
 
             <!-- Centered Logo -->
             <div class="logo-container">
-                <img src="/img/roze-ventures-logo-boxed.png" alt="Roze Ventures Logo" class="logo-img" />
+                <img src="/img/rv-split-rose-bw.png" alt="Roze Ventures Logo" class="logo-img" />
             </div>
 
             <!-- Footer Intrigue - positioned 15px below the logo via JS so it
@@ -333,315 +333,315 @@
         </div>
 
         <script>
-        (function () {
-            'use strict';
+            (function () {
+                'use strict';
 
-            /* ===============================================================
-               KINETIC FLUIDS - tuning knobs
-               Dial these to taste; they map straight onto shader uniforms.
-               =============================================================== */
-            var CONFIG = {
-                speed:       0.04,  // overall flow rate. higher = more aggressive
-                scale:       0.50,  // pattern zoom. lower = larger, lazier forms
-                warp:        5.00,  // domain-warp strength. THIS is the swirl.
-                veinFreq:    0.75,  // how many vein bands fold through the field
-                veinSharp:   0.25,  // vein thinness. higher = finer, harder edges
-                veinLight:   0.03,  // vein strength, pearl side
-                veinDark:    0.08,  // vein strength, ink side
-                contrast:    1.25   // tonal separation
-            };
+                /* ===============================================================
+                KINETIC FLUIDS - tuning knobs
+                Dial these to taste; they map straight onto shader uniforms.
+                =============================================================== */
+                var CONFIG = {
+                    speed:       0.04,  // overall flow rate. higher = more aggressive
+                    scale:       0.50,  // pattern zoom. lower = larger, lazier forms
+                    warp:        5.00,  // domain-warp strength. THIS is the swirl.
+                    veinFreq:    0.75,  // how many vein bands fold through the field
+                    veinSharp:   0.25,  // vein thinness. higher = finer, harder edges
+                    veinLight:   0.03,  // vein strength, pearl side
+                    veinDark:    0.08,  // vein strength, ink side
+                    contrast:    1.25   // tonal separation
+                };
 
-            var canvas = document.getElementById('fluid-canvas');
-            var container = document.querySelector('.container');
-            if (!canvas || !container) { return; }
+                var canvas = document.getElementById('fluid-canvas');
+                var container = document.querySelector('.container');
+                if (!canvas || !container) { return; }
 
-            var gl = null;
-            try {
-                var attrs = { alpha: false, antialias: false, depth: false, stencil: false,
-                              powerPreference: 'high-performance', preserveDrawingBuffer: false };
-                gl = canvas.getContext('webgl', attrs) || canvas.getContext('experimental-webgl', attrs);
-            } catch (e) { gl = null; }
+                var gl = null;
+                try {
+                    var attrs = { alpha: false, antialias: false, depth: false, stencil: false,
+                                powerPreference: 'high-performance', preserveDrawingBuffer: false };
+                    gl = canvas.getContext('webgl', attrs) || canvas.getContext('experimental-webgl', attrs);
+                } catch (e) { gl = null; }
 
-            /* No WebGL -> leave the CSS blob fallback on screen and bail out. */
-            if (!gl) {
-                canvas.parentNode && canvas.parentNode.removeChild(canvas);
-                return;
-            }
-
-            var reduceMotion = window.matchMedia &&
-                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-            /* Small screens and low-core devices get a cheaper noise stack. */
-            var lowPower = (navigator.hardwareConcurrency || 4) <= 4 ||
-                           Math.min(screen.width, screen.height) <= 480;
-            var OCTAVES = lowPower ? 3 : 5;
-
-            var VERT = [
-                'attribute vec2 aPos;',
-                'void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }'
-            ].join('\n');
-
-            var FRAG = [
-                'precision highp float;',
-                '#define OCTAVES ' + OCTAVES,
-                'uniform vec2  uRes;',
-                'uniform float uTime;',
-                'uniform float uScale;',
-                'uniform float uWarp;',
-                'uniform float uVeinFreq;',
-                'uniform float uVeinSharp;',
-                'uniform float uVeinLight;',
-                'uniform float uVeinDark;',
-                'uniform float uContrast;',
-
-                /* --- value noise ------------------------------------------ */
-                'float hash(vec2 p){',
-                '  p = fract(p * vec2(123.34, 456.21));',
-                '  p += dot(p, p + 45.32);',
-                '  return fract(p.x * p.y);',
-                '}',
-                'float noise(vec2 p){',
-                '  vec2 i = floor(p), f = fract(p);',
-                '  vec2 u = f * f * (3.0 - 2.0 * f);',
-                '  float a = hash(i);',
-                '  float b = hash(i + vec2(1.0, 0.0));',
-                '  float c = hash(i + vec2(0.0, 1.0));',
-                '  float d = hash(i + vec2(1.0, 1.0));',
-                '  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);',
-                '}',
-                /* rotated-lattice fbm: the rotation kills axis-aligned artefacts */
-                'float fbm(vec2 p){',
-                '  float s = 0.0, a = 0.5;',
-                '  mat2 m = mat2(1.6, 1.2, -1.2, 1.6);',
-                '  for (int i = 0; i < OCTAVES; i++){',
-                '    s += a * noise(p);',
-                '    p = m * p;',
-                '    a *= 0.5;',
-                '  }',
-                '  return s;',
-                '}',
-
-                'void main(){',
-                '  vec2 uv = gl_FragCoord.xy / uRes.xy;',
-                '  vec2 p  = vec2(uv.x * (uRes.x / uRes.y), uv.y) * uScale;',
-                '  float t = uTime;',
-
-                /* --- domain warping: fbm of fbm of fbm.
-                       Each pass folds the field into the next, which is what
-                       turns smooth noise into liquid marbling. ------------- */
-                '  vec2 q = vec2( fbm(p + vec2(0.0, 0.0) + t * 0.16),',
-                '                 fbm(p + vec2(5.2, 1.3) - t * 0.13) );',
-                '  vec2 r = vec2( fbm(p + uWarp * q + vec2(1.7, 9.2) + t * 0.20),',
-                '                 fbm(p + uWarp * q + vec2(8.3, 2.8) - t * 0.17) );',
-                '  float v = fbm(p + uWarp * r + t * 0.06);',
-
-                '  float warpAmt = length(r);',
-                '  float tone = clamp((v - 0.5) * uContrast + 0.5, 0.0, 1.0);',
-                '  tone = smoothstep(0.30, 0.90, tone);',
-
-                /* --- veins: fold the field into repeating bands, then take a
-                       ridge of each band. this is the marble vein. --------- */
-                '  float bands = fract(v * uVeinFreq + warpAmt * 0.85);',
-                '  float vein  = pow(1.0 - abs(2.0 * bands - 1.0), uVeinSharp);',
-
-                /* --- pearl half ------------------------------------------- */
-                '  vec3 light = mix(vec3(0.815, 0.805, 0.815),',
-                '                   vec3(0.996, 0.994, 0.989), tone);',
-                '  light = mix(light, vec3(0.505, 0.495, 0.525), vein * uVeinLight);',
-                /* Pearl iridescence: rose -> cool blue -> gold. Deliberately
-                   NOT a full spectrum sweep, which drifts through green and
-                   reads as dirty rather than pearlescent. */
-                '  float ph = warpAmt * 3.4;',
-                '  vec3 irid = mix(vec3(1.032, 0.972, 0.997),',
-                '                  vec3(0.972, 0.991, 1.036), 0.5 + 0.5 * sin(ph));',
-                '  irid = mix(irid, vec3(1.030, 1.008, 0.949), 0.35 + 0.35 * sin(ph * 0.62 + 1.7));',
-                '  light *= mix(vec3(1.0), irid, 0.90);',
-
-                /* --- ink half --------------------------------------------- */
-                '  vec3 dark = mix(vec3(0.008, 0.008, 0.012),',
-                '                  vec3(0.105, 0.105, 0.128), tone);',
-                '  dark = mix(dark, vec3(0.880, 0.890, 0.935), vein * uVeinDark);',
-                '  dark += vec3(0.030, 0.034, 0.048) * pow(tone, 3.0);',
-
-                /* --- the split, antialiased across one pixel --------------- */
-                '  float px = 0.75 / uRes.x;',
-                '  float side = smoothstep(0.5 - px, 0.5 + px, uv.x);',
-                '  vec3 col = mix(light, dark, side);',
-
-                /* --- dither: without this the dark half bands visibly ------ */
-                '  col += (hash(gl_FragCoord.xy * 0.7) - 0.5) * 0.016;',
-
-                '  gl_FragColor = vec4(col, 1.0);',
-                '}'
-            ].join('\n');
-
-            function compile(type, src) {
-                var s = gl.createShader(type);
-                gl.shaderSource(s, src);
-                gl.compileShader(s);
-                if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-                    console.error('[fluid] shader compile failed:', gl.getShaderInfoLog(s));
-                    gl.deleteShader(s);
-                    return null;
+                /* No WebGL -> leave the CSS blob fallback on screen and bail out. */
+                if (!gl) {
+                    canvas.parentNode && canvas.parentNode.removeChild(canvas);
+                    return;
                 }
-                return s;
-            }
 
-            var vs = compile(gl.VERTEX_SHADER, VERT);
-            var fs = compile(gl.FRAGMENT_SHADER, FRAG);
-            if (!vs || !fs) {
-                canvas.parentNode && canvas.parentNode.removeChild(canvas);
-                return;
-            }
+                var reduceMotion = window.matchMedia &&
+                    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-            var prog = gl.createProgram();
-            gl.attachShader(prog, vs);
-            gl.attachShader(prog, fs);
-            gl.linkProgram(prog);
-            if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-                console.error('[fluid] link failed:', gl.getProgramInfoLog(prog));
-                canvas.parentNode && canvas.parentNode.removeChild(canvas);
-                return;
-            }
-            gl.useProgram(prog);
+                /* Small screens and low-core devices get a cheaper noise stack. */
+                var lowPower = (navigator.hardwareConcurrency || 4) <= 4 ||
+                            Math.min(screen.width, screen.height) <= 480;
+                var OCTAVES = lowPower ? 3 : 5;
 
-            /* One oversized triangle covers the viewport with no seam. */
-            var buf = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
-            var aPos = gl.getAttribLocation(prog, 'aPos');
-            gl.enableVertexAttribArray(aPos);
-            gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+                var VERT = [
+                    'attribute vec2 aPos;',
+                    'void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }'
+                ].join('\n');
 
-            var U = {};
-            ['uRes','uTime','uScale','uWarp','uVeinFreq','uVeinSharp',
-             'uVeinLight','uVeinDark','uContrast'].forEach(function (n) {
-                U[n] = gl.getUniformLocation(prog, n);
-            });
+                var FRAG = [
+                    'precision highp float;',
+                    '#define OCTAVES ' + OCTAVES,
+                    'uniform vec2  uRes;',
+                    'uniform float uTime;',
+                    'uniform float uScale;',
+                    'uniform float uWarp;',
+                    'uniform float uVeinFreq;',
+                    'uniform float uVeinSharp;',
+                    'uniform float uVeinLight;',
+                    'uniform float uVeinDark;',
+                    'uniform float uContrast;',
 
-            gl.uniform1f(U.uScale,     CONFIG.scale);
-            gl.uniform1f(U.uWarp,      CONFIG.warp);
-            gl.uniform1f(U.uVeinFreq,  CONFIG.veinFreq);
-            gl.uniform1f(U.uVeinSharp, CONFIG.veinSharp);
-            gl.uniform1f(U.uVeinLight, CONFIG.veinLight);
-            gl.uniform1f(U.uVeinDark,  CONFIG.veinDark);
-            gl.uniform1f(U.uContrast,  CONFIG.contrast);
+                    /* --- value noise ------------------------------------------ */
+                    'float hash(vec2 p){',
+                    '  p = fract(p * vec2(123.34, 456.21));',
+                    '  p += dot(p, p + 45.32);',
+                    '  return fract(p.x * p.y);',
+                    '}',
+                    'float noise(vec2 p){',
+                    '  vec2 i = floor(p), f = fract(p);',
+                    '  vec2 u = f * f * (3.0 - 2.0 * f);',
+                    '  float a = hash(i);',
+                    '  float b = hash(i + vec2(1.0, 0.0));',
+                    '  float c = hash(i + vec2(0.0, 1.0));',
+                    '  float d = hash(i + vec2(1.0, 1.0));',
+                    '  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);',
+                    '}',
+                    /* rotated-lattice fbm: the rotation kills axis-aligned artefacts */
+                    'float fbm(vec2 p){',
+                    '  float s = 0.0, a = 0.5;',
+                    '  mat2 m = mat2(1.6, 1.2, -1.2, 1.6);',
+                    '  for (int i = 0; i < OCTAVES; i++){',
+                    '    s += a * noise(p);',
+                    '    p = m * p;',
+                    '    a *= 0.5;',
+                    '  }',
+                    '  return s;',
+                    '}',
 
-            /* Resolution budget: fluid upscales cleanly, so cap total pixels
-               rather than blindly honouring devicePixelRatio on 5K displays. */
-            var PIXEL_BUDGET = lowPower ? 900000 : 2100000;
-            var resScale = 1.0;
+                    'void main(){',
+                    '  vec2 uv = gl_FragCoord.xy / uRes.xy;',
+                    '  vec2 p  = vec2(uv.x * (uRes.x / uRes.y), uv.y) * uScale;',
+                    '  float t = uTime;',
 
-            function resize() {
-                var w = container.clientWidth || window.innerWidth;
-                var h = container.clientHeight || window.innerHeight;
-                var dpr = Math.min(window.devicePixelRatio || 1, 2);
-                var cw = w * dpr * resScale;
-                var ch = h * dpr * resScale;
-                var over = (cw * ch) / PIXEL_BUDGET;
-                if (over > 1) { var k = Math.sqrt(over); cw /= k; ch /= k; }
-                cw = Math.max(1, Math.round(cw));
-                ch = Math.max(1, Math.round(ch));
-                if (canvas.width !== cw || canvas.height !== ch) {
-                    canvas.width = cw;
-                    canvas.height = ch;
-                    gl.viewport(0, 0, cw, ch);
-                    gl.uniform2f(U.uRes, cw, ch);
-                }
-            }
-            resize();
-            window.addEventListener('resize', resize);
-            window.addEventListener('orientationchange', resize);
+                    /* --- domain warping: fbm of fbm of fbm.
+                        Each pass folds the field into the next, which is what
+                        turns smooth noise into liquid marbling. ------------- */
+                    '  vec2 q = vec2( fbm(p + vec2(0.0, 0.0) + t * 0.16),',
+                    '                 fbm(p + vec2(5.2, 1.3) - t * 0.13) );',
+                    '  vec2 r = vec2( fbm(p + uWarp * q + vec2(1.7, 9.2) + t * 0.20),',
+                    '                 fbm(p + uWarp * q + vec2(8.3, 2.8) - t * 0.17) );',
+                    '  float v = fbm(p + uWarp * r + t * 0.06);',
 
-            container.classList.add('gl-active');
+                    '  float warpAmt = length(r);',
+                    '  float tone = clamp((v - 0.5) * uContrast + 0.5, 0.0, 1.0);',
+                    '  tone = smoothstep(0.30, 0.90, tone);',
 
-            /* --- frame loop ------------------------------------------------ */
-            var start = null, raf = null, shown = false;
-            var samples = 0, accum = 0, downshifted = false;
+                    /* --- veins: fold the field into repeating bands, then take a
+                        ridge of each band. this is the marble vein. --------- */
+                    '  float bands = fract(v * uVeinFreq + warpAmt * 0.85);',
+                    '  float vein  = pow(1.0 - abs(2.0 * bands - 1.0), uVeinSharp);',
 
-            function frame(now) {
-                if (start === null) { start = now; }
-                var t = ((now - start) / 1000) * CONFIG.speed;
-                gl.uniform1f(U.uTime, t);
-                gl.drawArrays(gl.TRIANGLES, 0, 3);
+                    /* --- pearl half ------------------------------------------- */
+                    '  vec3 light = mix(vec3(0.815, 0.805, 0.815),',
+                    '                   vec3(0.996, 0.994, 0.989), tone);',
+                    '  light = mix(light, vec3(0.505, 0.495, 0.525), vein * uVeinLight);',
+                    /* Pearl iridescence: rose -> cool blue -> gold. Deliberately
+                    NOT a full spectrum sweep, which drifts through green and
+                    reads as dirty rather than pearlescent. */
+                    '  float ph = warpAmt * 3.4;',
+                    '  vec3 irid = mix(vec3(1.032, 0.972, 0.997),',
+                    '                  vec3(0.972, 0.991, 1.036), 0.5 + 0.5 * sin(ph));',
+                    '  irid = mix(irid, vec3(1.030, 1.008, 0.949), 0.35 + 0.35 * sin(ph * 0.62 + 1.7));',
+                    '  light *= mix(vec3(1.0), irid, 0.90);',
 
-                if (!shown) { shown = true; canvas.classList.add('ready'); }
+                    /* --- ink half --------------------------------------------- */
+                    '  vec3 dark = mix(vec3(0.008, 0.008, 0.012),',
+                    '                  vec3(0.105, 0.105, 0.128), tone);',
+                    '  dark = mix(dark, vec3(0.880, 0.890, 0.935), vein * uVeinDark);',
+                    '  dark += vec3(0.030, 0.034, 0.048) * pow(tone, 3.0);',
 
-                /* If the first ~40 frames run slow, drop resolution once. */
-                if (!downshifted && samples < 40) {
-                    if (window.__fluidLast) { accum += now - window.__fluidLast; samples++; }
-                    window.__fluidLast = now;
-                    if (samples === 40 && (accum / samples) > 23) {
-                        downshifted = true;
-                        resScale = 0.7;
-                        resize();
+                    /* --- the split, antialiased across one pixel --------------- */
+                    '  float px = 0.75 / uRes.x;',
+                    '  float side = smoothstep(0.5 - px, 0.5 + px, uv.x);',
+                    '  vec3 col = mix(light, dark, side);',
+
+                    /* --- dither: without this the dark half bands visibly ------ */
+                    '  col += (hash(gl_FragCoord.xy * 0.7) - 0.5) * 0.016;',
+
+                    '  gl_FragColor = vec4(col, 1.0);',
+                    '}'
+                ].join('\n');
+
+                function compile(type, src) {
+                    var s = gl.createShader(type);
+                    gl.shaderSource(s, src);
+                    gl.compileShader(s);
+                    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+                        console.error('[fluid] shader compile failed:', gl.getShaderInfoLog(s));
+                        gl.deleteShader(s);
+                        return null;
                     }
+                    return s;
                 }
-                raf = requestAnimationFrame(frame);
-            }
 
-            if (reduceMotion) {
-                /* Keep the marbling, drop the motion. */
-                resize();
-                gl.uniform1f(U.uTime, 9.0);
-                gl.drawArrays(gl.TRIANGLES, 0, 3);
-                canvas.classList.add('ready');
-            } else {
-                raf = requestAnimationFrame(frame);
-                document.addEventListener('visibilitychange', function () {
-                    if (document.hidden) {
-                        if (raf) { cancelAnimationFrame(raf); raf = null; }
-                    } else if (!raf) {
-                        /* Rebase the clock so it resumes instead of jumping. */
-                        var pausedAt = performance.now();
-                        start = pausedAt - (start === null ? 0 : (pausedAt - start));
-                        raf = requestAnimationFrame(frame);
-                    }
+                var vs = compile(gl.VERTEX_SHADER, VERT);
+                var fs = compile(gl.FRAGMENT_SHADER, FRAG);
+                if (!vs || !fs) {
+                    canvas.parentNode && canvas.parentNode.removeChild(canvas);
+                    return;
+                }
+
+                var prog = gl.createProgram();
+                gl.attachShader(prog, vs);
+                gl.attachShader(prog, fs);
+                gl.linkProgram(prog);
+                if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+                    console.error('[fluid] link failed:', gl.getProgramInfoLog(prog));
+                    canvas.parentNode && canvas.parentNode.removeChild(canvas);
+                    return;
+                }
+                gl.useProgram(prog);
+
+                /* One oversized triangle covers the viewport with no seam. */
+                var buf = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+                var aPos = gl.getAttribLocation(prog, 'aPos');
+                gl.enableVertexAttribArray(aPos);
+                gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+                var U = {};
+                ['uRes','uTime','uScale','uWarp','uVeinFreq','uVeinSharp',
+                'uVeinLight','uVeinDark','uContrast'].forEach(function (n) {
+                    U[n] = gl.getUniformLocation(prog, n);
                 });
-            }
 
-            /* Recover gracefully if the GPU process restarts. */
-            canvas.addEventListener('webglcontextlost', function (e) {
-                e.preventDefault();
-                if (raf) { cancelAnimationFrame(raf); raf = null; }
-                container.classList.remove('gl-active');
-                canvas.classList.remove('ready');
-            });
+                gl.uniform1f(U.uScale,     CONFIG.scale);
+                gl.uniform1f(U.uWarp,      CONFIG.warp);
+                gl.uniform1f(U.uVeinFreq,  CONFIG.veinFreq);
+                gl.uniform1f(U.uVeinSharp, CONFIG.veinSharp);
+                gl.uniform1f(U.uVeinLight, CONFIG.veinLight);
+                gl.uniform1f(U.uVeinDark,  CONFIG.veinDark);
+                gl.uniform1f(U.uContrast,  CONFIG.contrast);
 
-            window.RozeFluid = { config: CONFIG, uniforms: U, gl: gl, program: prog };
-        })();
+                /* Resolution budget: fluid upscales cleanly, so cap total pixels
+                rather than blindly honouring devicePixelRatio on 5K displays. */
+                var PIXEL_BUDGET = lowPower ? 900000 : 2100000;
+                var resScale = 1.0;
+
+                function resize() {
+                    var w = container.clientWidth || window.innerWidth;
+                    var h = container.clientHeight || window.innerHeight;
+                    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+                    var cw = w * dpr * resScale;
+                    var ch = h * dpr * resScale;
+                    var over = (cw * ch) / PIXEL_BUDGET;
+                    if (over > 1) { var k = Math.sqrt(over); cw /= k; ch /= k; }
+                    cw = Math.max(1, Math.round(cw));
+                    ch = Math.max(1, Math.round(ch));
+                    if (canvas.width !== cw || canvas.height !== ch) {
+                        canvas.width = cw;
+                        canvas.height = ch;
+                        gl.viewport(0, 0, cw, ch);
+                        gl.uniform2f(U.uRes, cw, ch);
+                    }
+                }
+                resize();
+                window.addEventListener('resize', resize);
+                window.addEventListener('orientationchange', resize);
+
+                container.classList.add('gl-active');
+
+                /* --- frame loop ------------------------------------------------ */
+                var start = null, raf = null, shown = false;
+                var samples = 0, accum = 0, downshifted = false;
+
+                function frame(now) {
+                    if (start === null) { start = now; }
+                    var t = ((now - start) / 1000) * CONFIG.speed;
+                    gl.uniform1f(U.uTime, t);
+                    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+                    if (!shown) { shown = true; canvas.classList.add('ready'); }
+
+                    /* If the first ~40 frames run slow, drop resolution once. */
+                    if (!downshifted && samples < 40) {
+                        if (window.__fluidLast) { accum += now - window.__fluidLast; samples++; }
+                        window.__fluidLast = now;
+                        if (samples === 40 && (accum / samples) > 23) {
+                            downshifted = true;
+                            resScale = 0.7;
+                            resize();
+                        }
+                    }
+                    raf = requestAnimationFrame(frame);
+                }
+
+                if (reduceMotion) {
+                    /* Keep the marbling, drop the motion. */
+                    resize();
+                    gl.uniform1f(U.uTime, 9.0);
+                    gl.drawArrays(gl.TRIANGLES, 0, 3);
+                    canvas.classList.add('ready');
+                } else {
+                    raf = requestAnimationFrame(frame);
+                    document.addEventListener('visibilitychange', function () {
+                        if (document.hidden) {
+                            if (raf) { cancelAnimationFrame(raf); raf = null; }
+                        } else if (!raf) {
+                            /* Rebase the clock so it resumes instead of jumping. */
+                            var pausedAt = performance.now();
+                            start = pausedAt - (start === null ? 0 : (pausedAt - start));
+                            raf = requestAnimationFrame(frame);
+                        }
+                    });
+                }
+
+                /* Recover gracefully if the GPU process restarts. */
+                canvas.addEventListener('webglcontextlost', function (e) {
+                    e.preventDefault();
+                    if (raf) { cancelAnimationFrame(raf); raf = null; }
+                    container.classList.remove('gl-active');
+                    canvas.classList.remove('ready');
+                });
+
+                window.RozeFluid = { config: CONFIG, uniforms: U, gl: gl, program: prog };
+            })();
         </script>
 
         <script>
-        /* Keep the footer text 15px below the logo. The text stays a sibling
-           of the fluid halves (not a child of .logo-container) so its
-           mix-blend-mode: difference still splits black/white against the
-           light/dark background instead of being isolated by the logo's
-           stacking context. */
-        (function () {
-            'use strict';
-            var GAP = 15;
-            var logo = document.querySelector('.logo-container');
-            var footer = document.querySelector('.footer-text');
-            var img = logo && logo.querySelector('img');
-            if (!logo || !footer) { return; }
+            /* Keep the footer text 15px below the logo. The text stays a sibling
+            of the fluid halves (not a child of .logo-container) so its
+            mix-blend-mode: difference still splits black/white against the
+            light/dark background instead of being isolated by the logo's
+            stacking context. */
+            (function () {
+                'use strict';
+                var GAP = 15;
+                var logo = document.querySelector('.logo-container');
+                var footer = document.querySelector('.footer-text');
+                var img = logo && logo.querySelector('img');
+                if (!logo || !footer) { return; }
 
-            function position() {
-                var logoRect = logo.getBoundingClientRect();
-                var parentRect = footer.offsetParent
-                    ? footer.offsetParent.getBoundingClientRect()
-                    : { top: 0 };
-                footer.style.bottom = 'auto';
-                footer.style.top = (logoRect.bottom - parentRect.top + GAP) + 'px';
-            }
+                function position() {
+                    var logoRect = logo.getBoundingClientRect();
+                    var parentRect = footer.offsetParent
+                        ? footer.offsetParent.getBoundingClientRect()
+                        : { top: 0 };
+                    footer.style.bottom = 'auto';
+                    footer.style.top = (logoRect.bottom - parentRect.top + GAP) + 'px';
+                }
 
-            window.addEventListener('resize', position);
-            if (img && !img.complete) {
-                img.addEventListener('load', position);
-                img.addEventListener('error', position);
-            }
-            position();
-        })();
+                window.addEventListener('resize', position);
+                if (img && !img.complete) {
+                    img.addEventListener('load', position);
+                    img.addEventListener('error', position);
+                }
+                position();
+            })();
         </script>
     </body>
 </html>
