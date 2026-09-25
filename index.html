@@ -24,7 +24,7 @@
                 width: 100%;
                 overflow: hidden;
                 font-family: 'Barlow Condensed', 'Roboto Condensed', sans-serif;
-                background-color: #000;
+                background-color: #112E23;
             }
 
             .container {
@@ -46,8 +46,8 @@
                 overflow: hidden;
             }
 
-            .left-half  { background-color: #e9e7e3; }
-            .right-half { background-color: #060607; }
+            .left-half  { background-color: #F3ECE0; }
+            .right-half { background-color: #112E23; }
 
             /* The field is the blend surface. `isolation` keeps the blobs'
                mix-blend-modes from reaching through to the page behind. */
@@ -56,8 +56,8 @@
                 inset: 0;
                 isolation: isolate;
             }
-            .left-half  .fluid { background-color: #e9e7e3; }
-            .right-half .fluid { background-color: #060607; }
+            .left-half  .fluid { background-color: #F3ECE0; }
+            .right-half .fluid { background-color: #112E23; }
 
             /* ---------------------------------------------------------------
                KINETIC FLUID LAYERS
@@ -73,17 +73,17 @@
                 backface-visibility: hidden;
             }
 
-            /* ---------- LEFT: pearlescent ---------- */
+            /* ---------- LEFT: cream ---------- */
             .left-half .blob  { filter: blur(55px); }
 
             .l1 {
                 width: 105vw; height: 85vh; top: -22%; left: -38%;
-                background: radial-gradient(ellipse 58% 46% at 42% 44%, #ffffff 0%, rgba(255,255,255,0) 68%);
+                background: radial-gradient(ellipse 58% 46% at 42% 44%, #fffaf1 0%, rgba(255,250,241,0) 68%);
                 animation: driftA 26s ease-in-out infinite;
             }
             .l2 {
                 width: 95vw; height: 95vh; top: 12%; left: -30%;
-                background: radial-gradient(ellipse 55% 50% at 55% 50%, #c3c0c4 0%, rgba(195,192,196,0) 70%);
+                background: radial-gradient(ellipse 55% 50% at 55% 50%, #d3c6b0 0%, rgba(211,198,176,0) 70%);
                 mix-blend-mode: multiply;
                 animation: driftB 34s ease-in-out infinite;
             }
@@ -95,46 +95,46 @@
             }
             .l4 {
                 width: 92vw; height: 88vh; top: 20%; left: -22%;
-                background: radial-gradient(ellipse 50% 42% at 52% 46%, #d5e0ef 0%, rgba(213,224,239,0) 68%);
+                background: radial-gradient(ellipse 50% 42% at 52% 46%, #e6d9c2 0%, rgba(230,217,194,0) 68%);
                 mix-blend-mode: multiply;
                 animation: driftD 39s ease-in-out infinite;
             }
             .l5 {
                 width: 70vw; height: 62vh; top: 34%; left: 6%;
-                background: radial-gradient(ellipse 48% 40% at 46% 50%, #ffffff 0%, rgba(255,255,255,0) 64%);
+                background: radial-gradient(ellipse 48% 40% at 46% 50%, #fffaf1 0%, rgba(255,250,241,0) 64%);
                 animation: driftE 29s ease-in-out infinite;
             }
 
-            /* ---------- RIGHT: charcoal liquid ---------- */
+            /* ---------- RIGHT: green liquid ---------- */
             .right-half .blob { filter: blur(60px); }
 
             .d1 {
                 width: 100vw; height: 88vh; top: -18%; left: -30%;
-                background: radial-gradient(ellipse 56% 46% at 44% 46%, #4a4a52 0%, rgba(74,74,82,0) 68%);
+                background: radial-gradient(ellipse 56% 46% at 44% 46%, #2c5a47 0%, rgba(44,90,71,0) 68%);
                 mix-blend-mode: screen;
                 animation: driftB 28s ease-in-out infinite;
             }
             .d2 {
                 width: 92vw; height: 92vh; top: 8%; left: -14%;
-                background: radial-gradient(ellipse 52% 48% at 54% 50%, #26262c 0%, rgba(38,38,44,0) 70%);
+                background: radial-gradient(ellipse 52% 48% at 54% 50%, #1a3f31 0%, rgba(26,63,49,0) 70%);
                 mix-blend-mode: screen;
                 animation: driftD 36s ease-in-out infinite;
             }
             .d3 {
                 width: 66vw; height: 58vh; top: 28%; left: 4%;
-                background: radial-gradient(ellipse 46% 38% at 48% 48%, #6e6e7c 0%, rgba(110,110,124,0) 62%);
+                background: radial-gradient(ellipse 46% 38% at 48% 48%, #3f7560 0%, rgba(63,117,96,0) 62%);
                 mix-blend-mode: screen;
                 animation: driftA 23s ease-in-out infinite;
             }
             .d4 {
                 width: 96vw; height: 80vh; top: 24%; left: -34%;
-                background: radial-gradient(ellipse 54% 44% at 50% 50%, #000000 0%, rgba(0,0,0,0) 66%);
+                background: radial-gradient(ellipse 54% 44% at 50% 50%, #061a12 0%, rgba(6,26,18,0) 66%);
                 mix-blend-mode: multiply;
                 animation: driftC 31s ease-in-out infinite;
             }
             .d5 {
                 width: 74vw; height: 66vh; top: -8%; left: 10%;
-                background: radial-gradient(ellipse 44% 40% at 50% 46%, #34343d 0%, rgba(52,52,61,0) 64%);
+                background: radial-gradient(ellipse 44% 40% at 50% 46%, #234c3c 0%, rgba(35,76,60,0) 64%);
                 mix-blend-mode: screen;
                 animation: driftE 42s ease-in-out infinite;
             }
@@ -152,18 +152,18 @@
             }
             .left-half .sheen {
                 background: conic-gradient(from 0deg,
-                    rgba(255,209,222,0.60), rgba(210,228,255,0.60),
-                    rgba(255,246,214,0.60), rgba(226,212,255,0.55),
-                    rgba(255,209,222,0.60));
+                    rgba(255,214,204,0.60), rgba(236,228,206,0.60),
+                    rgba(255,240,205,0.60), rgba(240,222,214,0.55),
+                    rgba(255,214,204,0.60));
                 mix-blend-mode: overlay;
                 filter: blur(85px);
                 opacity: 0.55;
             }
             .right-half .sheen {
                 background: conic-gradient(from 180deg,
-                    rgba(120,130,160,0.40), rgba(70,70,80,0.20),
-                    rgba(150,140,130,0.35), rgba(60,60,72,0.20),
-                    rgba(120,130,160,0.40));
+                    rgba(110,160,135,0.40), rgba(40,80,62,0.20),
+                    rgba(170,160,130,0.35), rgba(30,65,50,0.20),
+                    rgba(110,160,135,0.40));
                 mix-blend-mode: overlay;
                 filter: blur(95px);
                 opacity: 0.7;
@@ -323,7 +323,7 @@
 
             <!-- Centered Logo -->
             <div class="logo-container">
-                <img src="/img/rv-split-rose-red.png" alt="Roze Ventures Logo" class="logo-img" />
+                <img src="/img/rv-split-rose-green.png" alt="Roze Ventures Logo" class="logo-img" />
             </div>
 
             <!-- Footer Intrigue - positioned 15px below the logo via JS so it
@@ -445,23 +445,22 @@
                     '  float vein  = pow(1.0 - abs(2.0 * bands - 1.0), uVeinSharp);',
 
                     /* --- pearl half ------------------------------------------- */
-                    '  vec3 light = mix(vec3(0.815, 0.805, 0.815),',
-                    '                   vec3(0.996, 0.994, 0.989), tone);',
-                    '  light = mix(light, vec3(0.505, 0.495, 0.525), vein * uVeinLight);',
-                    /* Pearl iridescence: rose -> cool blue -> gold. Deliberately
-                    NOT a full spectrum sweep, which drifts through green and
-                    reads as dirty rather than pearlescent. */
+                    '  vec3 light = mix(vec3(0.885, 0.850, 0.790),',
+                    '                   vec3(0.995, 0.978, 0.945), tone);',
+                    '  light = mix(light, vec3(0.520, 0.470, 0.400), vein * uVeinLight);',
+                    /* Cream iridescence: rose -> soft neutral -> gold. Kept warm on
+                    purpose; a cool blue swing greys the cream out. */
                     '  float ph = warpAmt * 3.4;',
-                    '  vec3 irid = mix(vec3(1.032, 0.972, 0.997),',
-                    '                  vec3(0.972, 0.991, 1.036), 0.5 + 0.5 * sin(ph));',
-                    '  irid = mix(irid, vec3(1.030, 1.008, 0.949), 0.35 + 0.35 * sin(ph * 0.62 + 1.7));',
+                    '  vec3 irid = mix(vec3(1.030, 0.975, 0.985),',
+                    '                  vec3(0.985, 1.000, 1.010), 0.5 + 0.5 * sin(ph));',
+                    '  irid = mix(irid, vec3(1.025, 1.005, 0.955), 0.35 + 0.35 * sin(ph * 0.62 + 1.7));',
                     '  light *= mix(vec3(1.0), irid, 0.90);',
 
-                    /* --- ink half --------------------------------------------- */
-                    '  vec3 dark = mix(vec3(0.008, 0.008, 0.012),',
-                    '                  vec3(0.105, 0.105, 0.128), tone);',
-                    '  dark = mix(dark, vec3(0.880, 0.890, 0.935), vein * uVeinDark);',
-                    '  dark += vec3(0.030, 0.034, 0.048) * pow(tone, 3.0);',
+                    /* --- green half ------------------------------------------- */
+                    '  vec3 dark = mix(vec3(0.030, 0.090, 0.066),',
+                    '                  vec3(0.105, 0.245, 0.190), tone);',
+                    '  dark = mix(dark, vec3(0.880, 0.920, 0.860), vein * uVeinDark);',
+                    '  dark += vec3(0.020, 0.045, 0.032) * pow(tone, 3.0);',
 
                     /* --- the split, antialiased across one pixel --------------- */
                     '  float px = 0.75 / uRes.x;',
